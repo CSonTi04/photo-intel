@@ -1,0 +1,85 @@
+# Photo Intelligence — GPU Node Services
+#
+# Deploy this on the machine with the 4070 Ti GPU.
+# This runs the VLM Wrapper + Ollama.
+#
+# Usage:
+#   docker compose -f docker-compose-gpu.yml up -d
+
+version: "3.8"
+
+services:
+  # ── Ollama ───────────────────────────────────────────────────
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    networks:
+      - vlm-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── VLM Wrapper Service ──────────────────────────────────────
+
+  vlm-wrapper:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.vlm-wrapper
+    environment:
+      VLM_OLLAMA_BASE_URL: http://ollama:11434
+      VLM_DEFAULT_MODEL: ${VLM_MODEL:-llava:13b}
+      VLM_VRAM_THRESHOLD_MB: ${VLM_VRAM_THRESHOLD:-2000}
+      VLM_COOLDOWN_SECONDS: ${VLM_COOLDOWN:-5}
+      VLM_MAX_IMAGE_DIMENSION: ${VLM_MAX_DIM:-1344}
+      VLM_BIND_PORT: 8100
+    ports:
+      - "8100:8100"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - vlm-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; print(httpx.get('http://localhost:8100/ready-for-vlm').json())"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── Model Puller (one-shot) ──────────────────────────────────
+
+  model-puller:
+    image: curlimages/curl:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    command: >
+      sh -c '
+        echo "Pulling VLM model...";
+        curl -X POST http://ollama:11434/api/pull -d "{\"name\": \"${VLM_MODEL:-llava:13b}\"}";
+        echo "Model pull complete."
+      '
+    restart: "no"
+    networks:
+      - vlm-net
+
+volumes:
+  ollama-data:
+
+networks:
+  vlm-net:
+    driver: bridge

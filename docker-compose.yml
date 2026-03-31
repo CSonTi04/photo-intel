@@ -1,0 +1,104 @@
+# Photo Intelligence & Digest System — Docker Compose
+#
+# Services:
+#   - postgres:     Database
+#   - api:          FastAPI admin/API server
+#   - worker-cpu:   CPU task worker (exif, thumbnail, ocr)
+#   - worker-vlm:   VLM task worker (calls GPU wrapper)
+#   - maintenance:  Lease reclamation + task promotion
+#
+# GPU node (separate docker-compose-gpu.yml):
+#   - vlm-wrapper:  VLM Wrapper Service
+#   - ollama:       Ollama inference server
+
+version: "3.8"
+
+x-app-common: &app-common
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+  env_file: .env
+  volumes:
+    - photo-data:/data
+    - ./src:/app/src:ro
+  depends_on:
+    postgres:
+      condition: service_healthy
+  restart: unless-stopped
+  networks:
+    - photo-intel
+
+services:
+  # ── Database ─────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-photo_intel}
+      POSTGRES_USER: ${DB_USER:-photo_intel}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-photo_intel}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-photo_intel}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - photo-intel
+
+  # ── API Server ───────────────────────────────────────────────
+
+  api:
+    <<: *app-common
+    command: ["python", "-m", "src.cli", "api"]
+    ports:
+      - "${API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health').raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── CPU Worker ───────────────────────────────────────────────
+
+  worker-cpu:
+    <<: *app-common
+    command: ["python", "-m", "src.cli", "worker", "--type", "cpu"]
+    deploy:
+      replicas: ${CPU_WORKER_REPLICAS:-1}
+
+  # ── VLM Worker ───────────────────────────────────────────────
+
+  worker-vlm:
+    <<: *app-common
+    command: ["python", "-m", "src.cli", "worker", "--type", "vlm"]
+    environment:
+      - VLM_WRAPPER_URL=${VLM_WRAPPER_URL:-http://gpu-node:8100}
+    deploy:
+      replicas: 1  # Single VLM worker to avoid GPU contention
+
+  # ── Maintenance Worker ───────────────────────────────────────
+
+  maintenance:
+    <<: *app-common
+    command: ["python", "-m", "src.cli", "worker", "--type", "maintenance"]
+    deploy:
+      replicas: 1
+
+volumes:
+  postgres-data:
+  photo-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PHOTO_DATA_DIR:-/data/photos}
+
+networks:
+  photo-intel:
+    driver: bridge

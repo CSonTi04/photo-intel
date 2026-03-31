@@ -1,0 +1,152 @@
+# VLM Prompt Definitions
+# These are stored in DB (task_definition.prompt_template) but documented here as reference.
+# Update via API or direct DB update. The wrapper service also has its own prompt registry.
+
+# ───────────────────────────────────────────────────────────────
+# vlm_caption — Image description + scene classification
+# ───────────────────────────────────────────────────────────────
+vlm_caption:
+  version: 1
+  model: "llava:13b"
+  system: "You are a precise image analyst. Always respond in valid JSON."
+  prompt: |
+    Describe this image in 1-2 concise sentences. Identify:
+    - The main scene or subject
+    - Key objects, people, or text visible
+    - The setting or context
+
+    Respond ONLY in this JSON format:
+    {
+      "caption": "A short description of the image",
+      "scene_category": "indoor|outdoor|screen|document|food|people|nature|urban|other",
+      "subjects": ["list", "of", "main", "subjects"],
+      "mood": "overall mood or atmosphere",
+      "has_text": true or false
+    }
+
+  output_schema:
+    type: object
+    required: [caption, scene_category]
+    properties:
+      caption:
+        type: string
+        description: "1-2 sentence description"
+      scene_category:
+        type: string
+        enum: [indoor, outdoor, screen, document, food, people, nature, urban, other]
+      subjects:
+        type: array
+        items:
+          type: string
+      mood:
+        type: string
+      has_text:
+        type: boolean
+
+# ───────────────────────────────────────────────────────────────
+# vlm_actionability — Detect actionable information in screenshots
+# ───────────────────────────────────────────────────────────────
+vlm_actionability:
+  version: 1
+  model: "llava:13b"
+  system: "You are a personal assistant analyzing screenshots for actionable items. Always respond in valid JSON."
+  prompt: |
+    Analyze this screenshot carefully. Determine if it contains any actionable
+    information the user should act on. Look for:
+    - Deadlines, appointments, or time-sensitive items
+    - Prices, deals, or financial information
+    - Bookings, reservations, or confirmations
+    - Tasks, reminders, or to-do items
+    - Error messages or warnings requiring attention
+    - Discount codes or limited-time offers
+
+    Respond ONLY in this JSON format:
+    {
+      "is_actionable": true/false,
+      "action_items": [
+        {"item": "description of action", "due_date": "YYYY-MM-DD or null"}
+      ],
+      "urgency": "none|low|medium|high",
+      "category": "deadline|financial|booking|task|error|info|other",
+      "reasoning": "brief explanation of why this is/isn't actionable"
+    }
+
+  output_schema:
+    type: object
+    required: [is_actionable, urgency]
+    properties:
+      is_actionable:
+        type: boolean
+      action_items:
+        type: array
+        items:
+          type: object
+          properties:
+            item:
+              type: string
+            due_date:
+              type: [string, "null"]
+      urgency:
+        type: string
+        enum: [none, low, medium, high]
+      category:
+        type: string
+        enum: [deadline, financial, booking, task, error, info, other]
+      reasoning:
+        type: string
+
+# ───────────────────────────────────────────────────────────────
+# vlm_memory_summary — Personal knowledge base extraction
+# ───────────────────────────────────────────────────────────────
+vlm_memory_summary:
+  version: 1
+  model: "llava:13b"
+  system: "You are a personal memory assistant. Extract what's worth remembering from images. Always respond in valid JSON."
+  prompt: |
+    Analyze this image and determine what is worth remembering for the user's
+    personal knowledge base. Consider:
+    - People present and their context
+    - Places shown and their significance
+    - Events or occasions captured
+    - Information displayed (receipts, tickets, documents)
+    - Emotional or sentimental value
+
+    Respond ONLY in this JSON format:
+    {
+      "memory_relevance": "none|low|medium|high",
+      "summary": "what to remember about this image",
+      "people_hints": ["person or group descriptions"],
+      "place_hints": ["location descriptions or identifiers"],
+      "time_hints": ["temporal context clues"],
+      "tags": ["relevant", "categorical", "tags"],
+      "emotional_context": "neutral|happy|important|milestone|routine"
+    }
+
+  output_schema:
+    type: object
+    required: [memory_relevance, summary]
+    properties:
+      memory_relevance:
+        type: string
+        enum: [none, low, medium, high]
+      summary:
+        type: string
+      people_hints:
+        type: array
+        items:
+          type: string
+      place_hints:
+        type: array
+        items:
+          type: string
+      time_hints:
+        type: array
+        items:
+          type: string
+      tags:
+        type: array
+        items:
+          type: string
+      emotional_context:
+        type: string
+        enum: [neutral, happy, important, milestone, routine]
