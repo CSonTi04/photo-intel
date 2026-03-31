@@ -1,0 +1,2 @@
+[console_scripts]
+photo-intel = src.cli:main
