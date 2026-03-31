@@ -33,9 +33,7 @@ class GenerateThumbnailHandler:
         input_hash: str,
         session: AsyncSession = None,
     ) -> dict:
-        result = await session.execute(
-            select(MediaItem).where(MediaItem.id == media_item_id)
-        )
+        result = await session.execute(select(MediaItem).where(MediaItem.id == media_item_id))
         media = result.scalar_one_or_none()
         if not media:
             raise TaskRetryableError(f"MediaItem {media_item_id} not found")
@@ -54,6 +52,7 @@ class GenerateThumbnailHandler:
         with Image.open(file_path) as img:
             # Preserve EXIF orientation
             from PIL import ImageOps
+
             img = ImageOps.exif_transpose(img)
 
             for size in sizes:
@@ -71,13 +70,15 @@ class GenerateThumbnailHandler:
                 else:
                     thumb.save(thumb_path, fmt.upper())
 
-                generated.append({
-                    "size": size,
-                    "path": str(thumb_path),
-                    "width": thumb.width,
-                    "height": thumb.height,
-                    "format": fmt,
-                })
+                generated.append(
+                    {
+                        "size": size,
+                        "path": str(thumb_path),
+                        "width": thumb.width,
+                        "height": thumb.height,
+                        "format": fmt,
+                    }
+                )
 
                 logger.debug("thumbnail.generated", size=size, path=str(thumb_path))
 

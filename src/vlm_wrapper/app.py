@@ -26,13 +26,14 @@ logger = structlog.get_logger()
 
 # ── Settings ───────────────────────────────────────────────────
 
+
 class WrapperSettings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     default_model: str = "llava:13b"
     vram_threshold_mb: int = 2000  # Minimum free VRAM to accept tasks
-    cooldown_seconds: int = 5      # Cooldown between tasks
-    manual_override: bool = False   # Manual kill switch
-    max_image_dimension: int = 1344 # Max dimension for VLM input
+    cooldown_seconds: int = 5  # Cooldown between tasks
+    manual_override: bool = False  # Manual kill switch
+    max_image_dimension: int = 1344  # Max dimension for VLM input
     jpeg_quality: int = 85
     cache_dir: str = "/tmp/vlm_cache"
     bind_host: str = "0.0.0.0"
@@ -64,10 +65,10 @@ PROMPT_REGISTRY: dict[str, dict] = {
             "required": ["caption", "scene_category"],
             "properties": {
                 "caption": {"type": "string"},
-                "scene_category": {"type": "string", "enum": [
-                    "indoor", "outdoor", "screen", "document", "food",
-                    "people", "nature", "urban", "other"
-                ]},
+                "scene_category": {
+                    "type": "string",
+                    "enum": ["indoor", "outdoor", "screen", "document", "food", "people", "nature", "urban", "other"],
+                },
                 "subjects": {"type": "array", "items": {"type": "string"}},
                 "mood": {"type": "string"},
                 "has_text": {"type": "boolean"},
@@ -138,11 +139,13 @@ PROMPT_REGISTRY: dict[str, dict] = {
 
 # ── State ──────────────────────────────────────────────────────
 
+
 class WrapperState:
     def __init__(self):
         self.last_task_time: datetime | None = None
         self.tasks_processed: int = 0
         self.errors: int = 0
+
 
 state = WrapperState()
 
@@ -157,12 +160,15 @@ app = FastAPI(
 
 # ── Helpers ────────────────────────────────────────────────────
 
+
 def get_nvidia_free_vram_mb() -> int:
     """Query nvidia-smi for free VRAM in MB."""
     try:
         result = subprocess.run(
             ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if result.returncode == 0:
             return int(result.stdout.strip().split("\n")[0])
@@ -220,16 +226,16 @@ def parse_vlm_json(raw_text: str) -> dict:
 
     # Try finding JSON object in text
     for i, char in enumerate(text):
-        if char == '{':
+        if char == "{":
             depth = 0
             for j in range(i, len(text)):
-                if text[j] == '{':
+                if text[j] == "{":
                     depth += 1
-                elif text[j] == '}':
+                elif text[j] == "}":
                     depth -= 1
                     if depth == 0:
                         try:
-                            return json.loads(text[i:j+1])
+                            return json.loads(text[i : j + 1])
                         except json.JSONDecodeError:
                             break
             break
@@ -239,6 +245,7 @@ def parse_vlm_json(raw_text: str) -> dict:
 
 
 # ── Endpoints ──────────────────────────────────────────────────
+
 
 class ReadinessResponse(BaseModel):
     ready: bool
@@ -327,6 +334,7 @@ async def run_task(
 
     # Build Ollama request
     import base64
+
     image_b64 = base64.b64encode(processed_bytes).decode("utf-8")
 
     ollama_payload = {
@@ -427,6 +435,7 @@ async def set_override(action: str):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "src.vlm_wrapper.app:app",
         host=wrapper_settings.bind_host,

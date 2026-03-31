@@ -74,9 +74,7 @@ class BaseVLMHandler:
                 elif resp.status_code == 429:
                     raise TaskRetryableError("VLM Wrapper rate limited (429)")
                 else:
-                    raise TaskRetryableError(
-                        f"VLM Wrapper error: {resp.status_code} - {resp.text[:500]}"
-                    )
+                    raise TaskRetryableError(f"VLM Wrapper error: {resp.status_code} - {resp.text[:500]}")
 
         except httpx.ConnectError as e:
             raise TaskRetryableError(f"VLM Wrapper unreachable: {e}")
@@ -95,9 +93,7 @@ class BaseVLMHandler:
             raise TaskRetryableError("VLM Wrapper not ready")
 
         # Get media item
-        result = await session.execute(
-            select(MediaItem).where(MediaItem.id == media_item_id)
-        )
+        result = await session.execute(select(MediaItem).where(MediaItem.id == media_item_id))
         media = result.scalar_one_or_none()
         if not media:
             raise TaskPermanentError(f"MediaItem {media_item_id} not found")
@@ -124,16 +120,19 @@ class BaseVLMHandler:
 @register_task
 class VLMCaptionHandler(BaseVLMHandler):
     """Generate image captions and scene classification."""
+
     task_type = "vlm_caption"
 
 
 @register_task
 class VLMActionabilityHandler(BaseVLMHandler):
     """Detect actionable information in screenshots."""
+
     task_type = "vlm_actionability"
 
 
 @register_task
 class VLMMemorySummaryHandler(BaseVLMHandler):
     """Generate memory-worthy summaries for personal knowledge base."""
+
     task_type = "vlm_memory_summary"

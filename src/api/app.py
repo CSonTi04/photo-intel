@@ -27,6 +27,7 @@ async def lifespan(app: FastAPI):
     """Application lifespan — startup/shutdown."""
     # Import handlers to register them
     import src.tasks.handlers  # noqa
+
     yield
 
 
@@ -43,6 +44,7 @@ planner = TaskPlanner(queue)
 
 # ── Health ─────────────────────────────────────────────────────
 
+
 @app.get("/health")
 async def health():
     """Health check."""
@@ -55,6 +57,7 @@ async def health():
 
 
 # ── Stats ──────────────────────────────────────────────────────
+
 
 class SystemStats(BaseModel):
     total_media: int
@@ -71,26 +74,34 @@ async def get_stats():
     async with async_session() as session:
         # Media counts
         total = (await session.execute(select(func.count(MediaItem.id)))).scalar()
-        photos = (await session.execute(
-            select(func.count(MediaItem.id)).where(MediaItem.media_kind == "photo")
-        )).scalar()
-        screenshots = (await session.execute(
-            select(func.count(MediaItem.id)).where(MediaItem.media_kind == "screenshot")
-        )).scalar()
+        photos = (
+            await session.execute(select(func.count(MediaItem.id)).where(MediaItem.media_kind == "photo"))
+        ).scalar()
+        screenshots = (
+            await session.execute(select(func.count(MediaItem.id)).where(MediaItem.media_kind == "screenshot"))
+        ).scalar()
 
         # Queue stats
         q_stats = await queue.get_queue_stats(session)
 
         # Today's completion stats
-        today_completed = (await session.execute(text("""
+        today_completed = (
+            await session.execute(
+                text("""
             SELECT COUNT(*) FROM task_instance
             WHERE state = 'completed' AND completed_at >= CURRENT_DATE
-        """))).scalar()
+        """)
+            )
+        ).scalar()
 
-        today_failed = (await session.execute(text("""
+        today_failed = (
+            await session.execute(
+                text("""
             SELECT COUNT(*) FROM task_instance
             WHERE state IN ('failed', 'dead_letter') AND updated_at >= CURRENT_DATE
-        """))).scalar()
+        """)
+            )
+        ).scalar()
 
         return SystemStats(
             total_media=total,
@@ -103,6 +114,7 @@ async def get_stats():
 
 
 # ── Ingest ─────────────────────────────────────────────────────
+
 
 class IngestRequest(BaseModel):
     directories: list[str] | None = None
@@ -130,9 +142,7 @@ async def trigger_scan(req: IngestRequest):
         if scan_stats["registered"] > 0:
             # Get recently registered items
             result = await session.execute(
-                select(MediaItem.id)
-                .order_by(MediaItem.created_at.desc())
-                .limit(scan_stats["registered"])
+                select(MediaItem.id).order_by(MediaItem.created_at.desc()).limit(scan_stats["registered"])
             )
             new_ids = [row[0] for row in result.fetchall()]
             plan_stats = await planner.plan_batch(session, new_ids)
@@ -146,6 +156,7 @@ async def trigger_scan(req: IngestRequest):
 
 
 # ── Media ──────────────────────────────────────────────────────
+
 
 class MediaItemResponse(BaseModel):
     id: UUID
@@ -194,9 +205,7 @@ async def list_media(
 async def get_media_detail(media_id: UUID):
     """Get detailed info for a media item including all task outputs."""
     async with async_session() as session:
-        result = await session.execute(
-            select(MediaItem).where(MediaItem.id == media_id)
-        )
+        result = await session.execute(select(MediaItem).where(MediaItem.id == media_id))
         media = result.scalar_one_or_none()
         if not media:
             raise HTTPException(404, "Media item not found")
@@ -211,15 +220,17 @@ async def get_media_detail(media_id: UUID):
 
         tasks = []
         for ti, to in tasks_result.fetchall():
-            tasks.append({
-                "task_type": ti.task_type,
-                "task_version": ti.task_version,
-                "state": ti.state.value,
-                "attempts": ti.attempts,
-                "output": to.output_json if to else None,
-                "summary": to.summary_text if to else None,
-                "completed_at": ti.completed_at.isoformat() if ti.completed_at else None,
-            })
+            tasks.append(
+                {
+                    "task_type": ti.task_type,
+                    "task_version": ti.task_version,
+                    "state": ti.state.value,
+                    "attempts": ti.attempts,
+                    "output": to.output_json if to else None,
+                    "summary": to.summary_text if to else None,
+                    "completed_at": ti.completed_at.isoformat() if ti.completed_at else None,
+                }
+            )
 
         return {
             "media": {
@@ -239,13 +250,12 @@ async def get_media_detail(media_id: UUID):
 
 # ── Tasks ──────────────────────────────────────────────────────
 
+
 @app.get("/tasks/definitions")
 async def list_task_definitions():
     """List all task definitions."""
     async with async_session() as session:
-        result = await session.execute(
-            select(TaskDefinition).order_by(TaskDefinition.priority)
-        )
+        result = await session.execute(select(TaskDefinition).order_by(TaskDefinition.priority))
         defs = result.scalars().all()
         return [
             {
@@ -273,6 +283,7 @@ async def replan_tasks(media_id: UUID):
 
 # ── DLQ ────────────────────────────────────────────────────────
 
+
 @app.get("/dlq")
 async def list_dead_letter_tasks(limit: int = Query(default=50)):
     """List dead letter queue entries."""
@@ -285,15 +296,17 @@ async def list_dead_letter_tasks(limit: int = Query(default=50)):
         )
         items = []
         for dlq, ti in result.fetchall():
-            items.append({
-                "task_instance_id": str(ti.id),
-                "media_item_id": str(ti.media_item_id),
-                "task_type": ti.task_type,
-                "error_type": dlq.error_type,
-                "error_message": dlq.error_message,
-                "attempts": ti.attempts,
-                "created_at": dlq.created_at.isoformat(),
-            })
+            items.append(
+                {
+                    "task_instance_id": str(ti.id),
+                    "media_item_id": str(ti.media_item_id),
+                    "task_type": ti.task_type,
+                    "error_type": dlq.error_type,
+                    "error_message": dlq.error_message,
+                    "attempts": ti.attempts,
+                    "created_at": dlq.created_at.isoformat(),
+                }
+            )
         return items
 
 
@@ -316,21 +329,20 @@ async def retry_dead_letter(task_instance_id: UUID):
             )
         )
         # Remove from DLQ
-        await session.execute(
-            delete(DeadLetterTask)
-            .where(DeadLetterTask.task_instance_id == task_instance_id)
-        )
+        await session.execute(delete(DeadLetterTask).where(DeadLetterTask.task_instance_id == task_instance_id))
         await session.commit()
         return {"status": "retried", "task_instance_id": str(task_instance_id)}
 
 
 # ── Metrics ────────────────────────────────────────────────────
 
+
 @app.get("/metrics/processing")
 async def get_processing_metrics(hours: int = Query(default=24)):
     """Get processing metrics for the last N hours."""
     async with async_session() as session:
-        result = await session.execute(text(f"""
+        result = await session.execute(
+            text(f"""
             SELECT
                 task_type,
                 COUNT(*) as total,
@@ -343,7 +355,8 @@ async def get_processing_metrics(hours: int = Query(default=24)):
             WHERE created_at >= NOW() - INTERVAL '{hours} hours'
             GROUP BY task_type
             ORDER BY task_type
-        """))
+        """)
+        )
         return [
             {
                 "task_type": row.task_type,
@@ -362,6 +375,7 @@ async def get_processing_metrics(hours: int = Query(default=24)):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "src.api.app:app",
         host="0.0.0.0",

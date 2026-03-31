@@ -12,9 +12,9 @@ def _setup_app():
     """Import the app with DB dependencies mocked."""
     # We need to patch the database module before the app is imported
     # to prevent real DB connections at module import time.
-    with patch("src.models.database.create_async_engine"), \
-         patch("src.models.database.async_sessionmaker"):
+    with patch("src.models.database.create_async_engine"), patch("src.models.database.async_sessionmaker"):
         from src.api.app import app
+
         return app
 
 
@@ -64,9 +64,13 @@ class TestStatsEndpoint:
         client = _make_test_client(app, session)
 
         with patch("src.api.app.queue") as mock_queue:
-            mock_queue.get_queue_stats = AsyncMock(return_value={
-                "pending": 10, "leased": 2, "completed": 100,
-            })
+            mock_queue.get_queue_stats = AsyncMock(
+                return_value={
+                    "pending": 10,
+                    "leased": 2,
+                    "completed": 100,
+                }
+            )
             resp = client.get("/stats")
 
         assert resp.status_code == 200

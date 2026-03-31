@@ -30,9 +30,11 @@ class TaskHandler(Protocol):
 
 class TaskRetryableError(Exception):
     """Raised when a task fails but should be retried."""
+
     pass
 
 
 class TaskPermanentError(Exception):
     """Raised when a task fails permanently (goes to DLQ)."""
+
     pass

@@ -96,9 +96,7 @@ class OCRFullHandler:
         input_hash: str,
         session: AsyncSession = None,
     ) -> dict:
-        result = await session.execute(
-            select(MediaItem).where(MediaItem.id == media_item_id)
-        )
+        result = await session.execute(select(MediaItem).where(MediaItem.id == media_item_id))
         media = result.scalar_one_or_none()
         if not media:
             raise TaskRetryableError(f"MediaItem {media_item_id} not found")
@@ -116,25 +114,30 @@ class OCRFullHandler:
         engine_version = "5.x"  # Tesseract version
         try:
             import pytesseract
+
             engine_version = pytesseract.get_tesseract_version().public
         except Exception:
             pass
 
-        stmt = pg_insert(MediaOCR).values(
-            id=uuid.uuid4(),
-            media_item_id=media_item_id,
-            engine="tesseract",
-            engine_version=str(engine_version),
-            full_text=ocr_result["full_text"],
-            structured_blocks_json=ocr_result["blocks"],
-            confidence=ocr_result["confidence"],
-        ).on_conflict_do_update(
-            constraint="uq_media_ocr_engine",
-            set_={
-                "full_text": ocr_result["full_text"],
-                "structured_blocks_json": ocr_result["blocks"],
-                "confidence": ocr_result["confidence"],
-            },
+        stmt = (
+            pg_insert(MediaOCR)
+            .values(
+                id=uuid.uuid4(),
+                media_item_id=media_item_id,
+                engine="tesseract",
+                engine_version=str(engine_version),
+                full_text=ocr_result["full_text"],
+                structured_blocks_json=ocr_result["blocks"],
+                confidence=ocr_result["confidence"],
+            )
+            .on_conflict_do_update(
+                constraint="uq_media_ocr_engine",
+                set_={
+                    "full_text": ocr_result["full_text"],
+                    "structured_blocks_json": ocr_result["blocks"],
+                    "confidence": ocr_result["confidence"],
+                },
+            )
         )
         await session.execute(stmt)
 
@@ -201,9 +204,7 @@ class OCREntitiesHandler:
         session: AsyncSession = None,
     ) -> dict:
         # Get OCR text (prerequisite: ocr_full must be completed)
-        result = await session.execute(
-            select(MediaOCR.full_text).where(MediaOCR.media_item_id == media_item_id)
-        )
+        result = await session.execute(select(MediaOCR.full_text).where(MediaOCR.media_item_id == media_item_id))
         row = result.fetchone()
         if not row or not row.full_text:
             return {"entities": {}, "entity_count": 0, "note": "no_ocr_text_available"}

@@ -39,20 +39,23 @@ class PostgresQueue:
         max_attempts: int = 3,
     ) -> TaskInstance | None:
         """Enqueue a task. Uses INSERT ... ON CONFLICT DO NOTHING for idempotency."""
-        stmt = pg_insert(TaskInstance).values(
-            id=uuid.uuid4(),
-            media_item_id=media_item_id,
-            task_type=task_type,
-            task_version=task_version,
-            state=TaskState.pending,
-            priority=priority,
-            available_at=available_at or datetime.utcnow(),
-            attempts=0,
-            max_attempts=max_attempts,
-            input_hash=input_hash,
-        ).on_conflict_do_nothing(
-            constraint="uq_task_idempotency"
-        ).returning(TaskInstance.id)
+        stmt = (
+            pg_insert(TaskInstance)
+            .values(
+                id=uuid.uuid4(),
+                media_item_id=media_item_id,
+                task_type=task_type,
+                task_version=task_version,
+                state=TaskState.pending,
+                priority=priority,
+                available_at=available_at or datetime.utcnow(),
+                attempts=0,
+                max_attempts=max_attempts,
+                input_hash=input_hash,
+            )
+            .on_conflict_do_nothing(constraint="uq_task_idempotency")
+            .returning(TaskInstance.id)
+        )
 
         result = await session.execute(stmt)
         row = result.fetchone()
@@ -98,13 +101,16 @@ class PostgresQueue:
             RETURNING id, media_item_id, task_type, task_version, attempts, input_hash
         """)
 
-        result = await session.execute(claim_sql, {
-            "worker_id": worker_id,
-            "lease_until": lease_until,
-            "task_types": task_types,
-            "now": now,
-            "limit": limit,
-        })
+        result = await session.execute(
+            claim_sql,
+            {
+                "worker_id": worker_id,
+                "lease_until": lease_until,
+                "task_types": task_types,
+                "now": now,
+                "limit": limit,
+            },
+        )
 
         rows = result.fetchall()
         tasks = []
@@ -137,14 +143,17 @@ class PostgresQueue:
         )
 
         # Upsert output
-        stmt = pg_insert(TaskOutput).values(
-            id=uuid.uuid4(),
-            task_instance_id=task_id,
-            output_json=output_json,
-            summary_text=summary_text,
-        ).on_conflict_do_update(
-            constraint="uq_task_output_instance",
-            set_={"output_json": output_json, "summary_text": summary_text}
+        stmt = (
+            pg_insert(TaskOutput)
+            .values(
+                id=uuid.uuid4(),
+                task_instance_id=task_id,
+                output_json=output_json,
+                summary_text=summary_text,
+            )
+            .on_conflict_do_update(
+                constraint="uq_task_output_instance", set_={"output_json": output_json, "summary_text": summary_text}
+            )
         )
         await session.execute(stmt)
 
@@ -155,9 +164,9 @@ class PostgresQueue:
                     id=uuid.uuid4(),
                     task_instance_id=task_id,
                     worker_id=worker_id,
-                    task_type=(await session.execute(
-                        select(TaskInstance.task_type).where(TaskInstance.id == task_id)
-                    )).scalar(),
+                    task_type=(
+                        await session.execute(select(TaskInstance.task_type).where(TaskInstance.id == task_id))
+                    ).scalar(),
                     duration_ms=duration_ms,
                     success=True,
                 )
@@ -176,8 +185,9 @@ class PostgresQueue:
         """Mark task as failed. Reschedule with backoff or move to DLQ."""
         # Get current state
         result = await session.execute(
-            select(TaskInstance.attempts, TaskInstance.max_attempts, TaskInstance.task_type)
-            .where(TaskInstance.id == task_id)
+            select(TaskInstance.attempts, TaskInstance.max_attempts, TaskInstance.task_type).where(
+                TaskInstance.id == task_id
+            )
         )
         row = result.fetchone()
         if not row:
@@ -193,13 +203,15 @@ class PostgresQueue:
                 .values(state=TaskState.dead_letter, error_message=error_message)
             )
             await session.execute(
-                pg_insert(DeadLetterTask).values(
+                pg_insert(DeadLetterTask)
+                .values(
                     id=uuid.uuid4(),
                     task_instance_id=task_id,
                     error_type="max_retries_exceeded",
                     error_message=error_message,
                     payload_json={"attempts": attempts},
-                ).on_conflict_do_nothing(constraint="uq_dlq_instance")
+                )
+                .on_conflict_do_nothing(constraint="uq_dlq_instance")
             )
             logger.warning("task.dead_lettered", task_id=str(task_id), task_type=task_type, attempts=attempts)
         else:
@@ -250,11 +262,13 @@ class PostgresQueue:
 
     async def get_queue_stats(self, session: AsyncSession) -> dict:
         """Get queue statistics by state."""
-        result = await session.execute(text("""
+        result = await session.execute(
+            text("""
             SELECT state, COUNT(*) as count
             FROM task_instance
             GROUP BY state
-        """))
+        """)
+        )
         return {row.state: row.count for row in result.fetchall()}
 
     async def promote_discovered_tasks(self, session: AsyncSession) -> int:

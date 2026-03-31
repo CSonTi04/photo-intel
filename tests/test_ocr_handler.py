@@ -64,9 +64,13 @@ class TestRunTesseract:
     def test_empty_text(self, mock_image_to_data, tmp_image):
         pytesseract.Output.DICT = "dict"
         mock_image_to_data.return_value = {
-            "text": ["", ""], "conf": [-1, -1],
-            "block_num": [0, 0], "left": [0, 0], "top": [0, 0],
-            "width": [0, 0], "height": [0, 0],
+            "text": ["", ""],
+            "conf": [-1, -1],
+            "block_num": [0, 0],
+            "left": [0, 0],
+            "top": [0, 0],
+            "width": [0, 0],
+            "height": [0, 0],
         }
 
         result = run_tesseract(tmp_image)

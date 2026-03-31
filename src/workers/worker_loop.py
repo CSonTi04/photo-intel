@@ -63,9 +63,7 @@ class Worker:
         else:
             self.concurrency = 1
 
-        self.batch_size = batch_size or (
-            settings.worker.vlm_batch_size if worker_type == "vlm" else self.concurrency
-        )
+        self.batch_size = batch_size or (settings.worker.vlm_batch_size if worker_type == "vlm" else self.concurrency)
 
         logger.info(
             "worker.init",
@@ -92,7 +90,8 @@ class Worker:
             logger.error("worker.no_handler", task_type=task_type)
             async with async_session() as session:
                 await self.queue.fail_task(
-                    session, task_id,
+                    session,
+                    task_id,
                     error_message=f"No handler registered for {task_type}",
                 )
                 await session.commit()
@@ -107,8 +106,7 @@ class Worker:
 
             async with async_session() as session:
                 result = await session.execute(
-                    select(TaskDefinition.config_json)
-                    .where(
+                    select(TaskDefinition.config_json).where(
                         TaskDefinition.task_type == task_type,
                         TaskDefinition.version == task_row.task_version,
                     )
@@ -168,7 +166,8 @@ class Worker:
             )
             async with async_session() as session:
                 await self.queue.fail_task(
-                    session, task_id,
+                    session,
+                    task_id,
                     error_message=str(e),
                     max_attempts=0,  # Force DLQ
                 )
@@ -251,6 +250,7 @@ async def run_cpu_worker():
     """Entry point for CPU worker."""
     # Import handlers to trigger registration
     import src.tasks.handlers  # noqa
+
     worker = Worker(worker_type="cpu")
     await worker.run_loop()
 
@@ -258,6 +258,7 @@ async def run_cpu_worker():
 async def run_vlm_worker():
     """Entry point for VLM worker."""
     import src.tasks.handlers  # noqa
+
     worker = Worker(worker_type="vlm")
     await worker.run_loop()
 
@@ -265,6 +266,7 @@ async def run_vlm_worker():
 async def run_maintenance_worker():
     """Periodic maintenance: reclaim leases, promote tasks."""
     import src.tasks.handlers  # noqa
+
     queue = PostgresQueue(async_session)
 
     while True:

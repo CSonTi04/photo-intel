@@ -37,18 +37,14 @@ class TaskPlanner:
         Returns list of created task_instance IDs.
         """
         # Get media item
-        result = await session.execute(
-            select(MediaItem).where(MediaItem.id == media_item_id)
-        )
+        result = await session.execute(select(MediaItem).where(MediaItem.id == media_item_id))
         media = result.scalar_one_or_none()
         if not media:
             logger.warning("planner.media_not_found", media_item_id=str(media_item_id))
             return []
 
         # Get enabled task definitions
-        result = await session.execute(
-            select(TaskDefinition).where(TaskDefinition.enabled)
-        )
+        result = await session.execute(select(TaskDefinition).where(TaskDefinition.enabled))
         definitions = result.scalars().all()
 
         created = []
@@ -90,10 +86,9 @@ class TaskPlanner:
                 # If it has prerequisites, set to discovered
                 if has_prerequisites:
                     from sqlalchemy import update
+
                     await session.execute(
-                        update(TaskInstance)
-                        .where(TaskInstance.id == task_id)
-                        .values(state=TaskState.discovered)
+                        update(TaskInstance).where(TaskInstance.id == task_id).values(state=TaskState.discovered)
                     )
                 created.append(task_id)
 

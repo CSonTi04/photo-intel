@@ -28,8 +28,13 @@ logger = structlog.get_logger()
 
 # Heuristics for screenshot detection
 SCREENSHOT_INDICATORS = {
-    "screenshot", "képernyőkép", "screen shot", "snip", "capture",
-    "bildschirmfoto", "schermafbeelding",
+    "screenshot",
+    "képernyőkép",
+    "screen shot",
+    "snip",
+    "capture",
+    "bildschirmfoto",
+    "schermafbeelding",
 }
 
 
@@ -58,11 +63,21 @@ def classify_media_kind(file_path: Path, width: int, height: int) -> MediaKind:
 
     # Common screen resolutions
     screen_sizes = {
-        (1920, 1080), (2560, 1440), (3840, 2160), (1440, 900),
-        (2880, 1800), (1366, 768), (1536, 864), (2560, 1600),
-        (3024, 1964), (2880, 1864),  # MacBook resolutions
-        (1170, 2532), (1284, 2778), (1179, 2556),  # iPhone
-        (1080, 2400), (1440, 3200),  # Android
+        (1920, 1080),
+        (2560, 1440),
+        (3840, 2160),
+        (1440, 900),
+        (2880, 1800),
+        (1366, 768),
+        (1536, 864),
+        (2560, 1600),
+        (3024, 1964),
+        (2880, 1864),  # MacBook resolutions
+        (1170, 2532),
+        (1284, 2778),
+        (1179, 2556),  # iPhone
+        (1080, 2400),
+        (1440, 3200),  # Android
     }
     if (width, height) in screen_sizes or (height, width) in screen_sizes:
         return MediaKind.screenshot
@@ -114,9 +129,7 @@ async def register_media_item(
     content_hash = compute_content_hash(file_path)
 
     # Check if already exists
-    existing = await session.execute(
-        select(MediaItem.id).where(MediaItem.content_hash == content_hash)
-    )
+    existing = await session.execute(select(MediaItem.id).where(MediaItem.content_hash == content_hash))
     if existing.scalar():
         logger.debug("ingest.duplicate", path=str(file_path), hash=content_hash[:12])
         return None
@@ -129,18 +142,22 @@ async def register_media_item(
     )
 
     item_id = uuid.uuid4()
-    stmt = pg_insert(MediaItem).values(
-        id=item_id,
-        content_hash=content_hash,
-        file_path=str(file_path),
-        source="filesystem",
-        captured_at=metadata["captured_at"],
-        mime_type=metadata["mime_type"],
-        width=metadata["width"],
-        height=metadata["height"],
-        file_size=metadata["file_size"],
-        media_kind=media_kind,
-    ).on_conflict_do_nothing(constraint="uq_media_content_hash")
+    stmt = (
+        pg_insert(MediaItem)
+        .values(
+            id=item_id,
+            content_hash=content_hash,
+            file_path=str(file_path),
+            source="filesystem",
+            captured_at=metadata["captured_at"],
+            mime_type=metadata["mime_type"],
+            width=metadata["width"],
+            height=metadata["height"],
+            file_size=metadata["file_size"],
+            media_kind=media_kind,
+        )
+        .on_conflict_do_nothing(constraint="uq_media_content_hash")
+    )
 
     result = await session.execute(stmt)
     if result.rowcount > 0:

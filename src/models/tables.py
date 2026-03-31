@@ -31,6 +31,7 @@ class MediaKind(enum.StrEnum):
     screenshot = "screenshot"
     unknown = "unknown"
 
+
 class TaskState(enum.StrEnum):
     discovered = "discovered"
     pending = "pending"
@@ -39,12 +40,14 @@ class TaskState(enum.StrEnum):
     failed = "failed"
     dead_letter = "dead_letter"
 
+
 class DigestType(enum.StrEnum):
     daily = "daily"
     resurface = "resurface"
 
 
 # ── Media ──────────────────────────────────────────────────────
+
 
 class MediaItem(Base):
     __tablename__ = "media_item"
@@ -73,7 +76,9 @@ class MediaExif(Base):
     __tablename__ = "media_exif"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    media_item_id = Column(UUID(as_uuid=True), ForeignKey("media_item.id", ondelete="CASCADE"), unique=True, nullable=False)  # noqa: E501
+    media_item_id = Column(
+        UUID(as_uuid=True), ForeignKey("media_item.id", ondelete="CASCADE"), unique=True, nullable=False
+    )  # noqa: E501
     exif_json = Column(JSONB, default={})
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
@@ -97,6 +102,7 @@ class MediaOCR(Base):
 
 
 # ── Tasks ──────────────────────────────────────────────────────
+
 
 class TaskDefinition(Base):
     __tablename__ = "task_definition"
@@ -147,14 +153,18 @@ class TaskInstance(Base):
 
     media_item = relationship("MediaItem", back_populates="task_instances")
     output = relationship("TaskOutput", back_populates="task_instance", uselist=False, cascade="all, delete-orphan")
-    dead_letter = relationship("DeadLetterTask", back_populates="task_instance", uselist=False, cascade="all, delete-orphan")  # noqa: E501
+    dead_letter = relationship(
+        "DeadLetterTask", back_populates="task_instance", uselist=False, cascade="all, delete-orphan"
+    )  # noqa: E501
 
 
 class TaskOutput(Base):
     __tablename__ = "task_output"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    task_instance_id = Column(UUID(as_uuid=True), ForeignKey("task_instance.id", ondelete="CASCADE"), unique=True, nullable=False)  # noqa: E501
+    task_instance_id = Column(
+        UUID(as_uuid=True), ForeignKey("task_instance.id", ondelete="CASCADE"), unique=True, nullable=False
+    )  # noqa: E501
     output_json = Column(JSONB, default={})
     summary_text = Column(Text)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
@@ -166,7 +176,9 @@ class DeadLetterTask(Base):
     __tablename__ = "dead_letter_task"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    task_instance_id = Column(UUID(as_uuid=True), ForeignKey("task_instance.id", ondelete="CASCADE"), unique=True, nullable=False)  # noqa: E501
+    task_instance_id = Column(
+        UUID(as_uuid=True), ForeignKey("task_instance.id", ondelete="CASCADE"), unique=True, nullable=False
+    )  # noqa: E501
     error_type = Column(String(128))
     error_message = Column(Text)
     payload_json = Column(JSONB, default={})
@@ -176,6 +188,7 @@ class DeadLetterTask(Base):
 
 
 # ── Digest ─────────────────────────────────────────────────────
+
 
 class DigestRun(Base):
     __tablename__ = "digest_run"
@@ -209,6 +222,7 @@ class DigestItem(Base):
 
 
 # ── Metrics ────────────────────────────────────────────────────
+
 
 class ProcessingMetric(Base):
     __tablename__ = "processing_metric"

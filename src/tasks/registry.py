@@ -5,7 +5,6 @@ New task types are registered by:
 2. Decorating it with @register_task or calling registry.register()
 """
 
-
 import structlog
 
 from src.tasks import TaskHandler

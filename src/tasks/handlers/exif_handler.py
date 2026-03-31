@@ -33,9 +33,7 @@ class ExtractExifHandler:
         session: AsyncSession = None,
     ) -> dict:
         # Fetch media item
-        result = await session.execute(
-            select(MediaItem).where(MediaItem.id == media_item_id)
-        )
+        result = await session.execute(select(MediaItem).where(MediaItem.id == media_item_id))
         media = result.scalar_one_or_none()
         if not media:
             raise TaskRetryableError(f"MediaItem {media_item_id} not found")
@@ -56,13 +54,18 @@ class ExtractExifHandler:
 
         # Store in media_exif
         from sqlalchemy.dialects.postgresql import insert as pg_insert
-        stmt = pg_insert(MediaExif).values(
-            id=uuid.uuid4(),
-            media_item_id=media_item_id,
-            exif_json=exif_data,
-        ).on_conflict_do_update(
-            constraint="uq_media_exif_item",
-            set_={"exif_json": exif_data},
+
+        stmt = (
+            pg_insert(MediaExif)
+            .values(
+                id=uuid.uuid4(),
+                media_item_id=media_item_id,
+                exif_json=exif_data,
+            )
+            .on_conflict_do_update(
+                constraint="uq_media_exif_item",
+                set_={"exif_json": exif_data},
+            )
         )
         await session.execute(stmt)
 

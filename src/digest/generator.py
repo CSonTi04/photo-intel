@@ -85,10 +85,13 @@ class DigestGenerator:
             ORDER BY mi.captured_at, ti.task_type
         """)
 
-        result = await session.execute(items_query, {
-            "start_date": datetime.combine(target_date, datetime.min.time()),
-            "end_date": datetime.combine(next_date, datetime.min.time()),
-        })
+        result = await session.execute(
+            items_query,
+            {
+                "start_date": datetime.combine(target_date, datetime.min.time()),
+                "end_date": datetime.combine(next_date, datetime.min.time()),
+            },
+        )
         rows = result.fetchall()
 
         # Group by media_item
@@ -146,13 +149,15 @@ class DigestGenerator:
                 if reasoning:
                     summary_parts.append(f"Action: {reasoning}")
 
-            digest_items.append({
-                "media_item_id": mid,
-                "section": section,
-                "rank_score": score,
-                "summary_text": " | ".join(summary_parts) if summary_parts else None,
-                "metadata_json": {"tasks_completed": list(tasks.keys())},
-            })
+            digest_items.append(
+                {
+                    "media_item_id": mid,
+                    "section": section,
+                    "rank_score": score,
+                    "summary_text": " | ".join(summary_parts) if summary_parts else None,
+                    "metadata_json": {"tasks_completed": list(tasks.keys())},
+                }
+            )
 
         # Sort by score within sections
         digest_items.sort(key=lambda x: (-x["rank_score"], x["section"]))
@@ -169,6 +174,7 @@ class DigestGenerator:
 
         # Update digest run status
         from sqlalchemy import update
+
         await session.execute(
             update(DigestRun)
             .where(DigestRun.id == digest_id)
@@ -188,8 +194,7 @@ class DigestGenerator:
             date=str(target_date),
             total_items=len(digest_items),
             sections={
-                s: len([i for i in digest_items if i["section"] == s])
-                for s in set(i["section"] for i in digest_items)
+                s: len([i for i in digest_items if i["section"] == s]) for s in set(i["section"] for i in digest_items)
             },
         )
 

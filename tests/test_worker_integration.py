@@ -49,10 +49,11 @@ class TestProcessTask:
 
         task_row = make_task_row(task_type="extract_exif")
 
-        with patch("src.workers.worker_loop.registry") as mock_registry, \
-             patch("src.workers.worker_loop.PostgresQueue", return_value=mock_queue), \
-             patch("src.workers.worker_loop.async_session") as mock_session_factory:
-
+        with (
+            patch("src.workers.worker_loop.registry") as mock_registry,
+            patch("src.workers.worker_loop.PostgresQueue", return_value=mock_queue),
+            patch("src.workers.worker_loop.async_session") as mock_session_factory,
+        ):
             mock_registry.get.return_value = mock_handler
 
             worker = Worker("cpu")
@@ -85,10 +86,11 @@ class TestProcessTask:
 
         task_row = make_task_row(task_type="extract_exif")
 
-        with patch("src.workers.worker_loop.registry") as mock_registry, \
-             patch("src.workers.worker_loop.PostgresQueue", return_value=mock_queue), \
-             patch("src.workers.worker_loop.async_session") as mock_session_factory:
-
+        with (
+            patch("src.workers.worker_loop.registry") as mock_registry,
+            patch("src.workers.worker_loop.PostgresQueue", return_value=mock_queue),
+            patch("src.workers.worker_loop.async_session") as mock_session_factory,
+        ):
             mock_registry.get.return_value = mock_handler
 
             worker = Worker("cpu")
@@ -119,10 +121,11 @@ class TestProcessTask:
 
         task_row = make_task_row(task_type="extract_exif")
 
-        with patch("src.workers.worker_loop.registry") as mock_registry, \
-             patch("src.workers.worker_loop.PostgresQueue", return_value=mock_queue), \
-             patch("src.workers.worker_loop.async_session") as mock_session_factory:
-
+        with (
+            patch("src.workers.worker_loop.registry") as mock_registry,
+            patch("src.workers.worker_loop.PostgresQueue", return_value=mock_queue),
+            patch("src.workers.worker_loop.async_session") as mock_session_factory,
+        ):
             mock_registry.get.return_value = mock_handler
 
             worker = Worker("cpu")
@@ -150,10 +153,11 @@ class TestProcessTask:
 
         task_row = make_task_row(task_type="nonexistent_task")
 
-        with patch("src.workers.worker_loop.registry") as mock_registry, \
-             patch("src.workers.worker_loop.PostgresQueue", return_value=mock_queue), \
-             patch("src.workers.worker_loop.async_session") as mock_session_factory:
-
+        with (
+            patch("src.workers.worker_loop.registry") as mock_registry,
+            patch("src.workers.worker_loop.PostgresQueue", return_value=mock_queue),
+            patch("src.workers.worker_loop.async_session") as mock_session_factory,
+        ):
             mock_registry.get.return_value = None
 
             worker = Worker("cpu")

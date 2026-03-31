@@ -24,6 +24,7 @@ def main(log_level: str, json_logs: bool):
 @click.option("--batch-size", default=500, help="Batch size")
 def scan(dirs: tuple, batch_size: int):
     """Run batch filesystem scan."""
+
     async def _scan():
         from src.ingest.scanner import run_batch_scan
         from src.models.database import async_session
@@ -43,6 +44,7 @@ def scan(dirs: tuple, batch_size: int):
 @click.option("--batch-size", default=500, help="Batch size")
 def ingest(dirs: tuple, batch_size: int):
     """Scan + plan tasks for new images."""
+
     async def _ingest():
         from sqlalchemy import select
 
@@ -67,9 +69,7 @@ def ingest(dirs: tuple, batch_size: int):
             # Plan tasks for new items
             if scan_stats["registered"] > 0:
                 result = await session.execute(
-                    select(MediaItem.id)
-                    .order_by(MediaItem.created_at.desc())
-                    .limit(scan_stats["registered"])
+                    select(MediaItem.id).order_by(MediaItem.created_at.desc()).limit(scan_stats["registered"])
                 )
                 new_ids = [row[0] for row in result.fetchall()]
                 plan_stats = await planner.plan_batch(session, new_ids)
@@ -80,11 +80,11 @@ def ingest(dirs: tuple, batch_size: int):
 
 
 @main.command()
-@click.option("--type", "worker_type", required=True,
-              type=click.Choice(["cpu", "vlm", "digest", "maintenance"]))
+@click.option("--type", "worker_type", required=True, type=click.Choice(["cpu", "vlm", "digest", "maintenance"]))
 @click.option("--id", "worker_id", default=None, help="Worker ID")
 def worker(worker_type: str, worker_id: str):
     """Start a worker process."""
+
     async def _worker():
         import src.tasks.handlers  # noqa - register handlers
         from src.workers.worker_loop import Worker, run_maintenance_worker
@@ -103,6 +103,7 @@ def worker(worker_type: str, worker_id: str):
 def api():
     """Start the FastAPI server."""
     import uvicorn
+
     click.echo(f"Starting API on port {settings.api_port}...")
     uvicorn.run(
         "src.api.app:app",
@@ -116,6 +117,7 @@ def api():
 @click.option("--date", "target_date", default=None, help="Target date (YYYY-MM-DD)")
 def digest(target_date: str):
     """Generate daily digest."""
+
     async def _digest():
         from datetime import date, datetime
 
@@ -136,6 +138,7 @@ def digest(target_date: str):
 @main.command()
 def stats():
     """Show system statistics."""
+
     async def _stats():
         from rich.console import Console
         from rich.table import Table
