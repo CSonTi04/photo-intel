@@ -59,6 +59,13 @@ graph TB
     W2 -->|writes results| DB
     W3 -->|reads task_outputs| DB
     W3 -->|writes digest| DB
+
+    style FS fill:#2d6a4f,color:#fff
+    style DB fill:#1b4965,color:#fff
+    style Q fill:#1b4965,color:#fff
+    style GW fill:#6a040f,color:#fff
+    style OL fill:#9d0208,color:#fff
+    style GPU fill:#9d0208,color:#fff
 ```
 
 ## Component Flow (Sequence)
@@ -176,7 +183,7 @@ stateDiagram-v2
 
 ## Networking
 
-- All services communicate over LAN
-- No public exposure required
-- Future: Tailscale for cross-network access
-- VLM Wrapper binds to LAN IP, authenticated via shared secret
+- All services communicate over the local network (LAN)
+- No public-facing exposure required
+- VLM Wrapper binds to a LAN IP, authenticated via a shared secret
+- **Future:** Tailscale for secure cross-network access

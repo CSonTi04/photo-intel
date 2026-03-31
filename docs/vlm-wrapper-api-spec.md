@@ -1,6 +1,9 @@
 # VLM Wrapper Service — API Specification
 
-Base URL: `http://gpu-node:8100`
+HTTP API for the GPU-side inference service that wraps Ollama/vLLM with
+readiness gating, prompt management, and image preprocessing.
+
+**Base URL:** `http://gpu-node:8100`
 
 ## Endpoints
 
@@ -119,25 +122,34 @@ Enable/disable manual override (kill switch).
 }
 ```
 
+---
+
 ## Image Preprocessing
 
 The wrapper automatically preprocesses images before sending to Ollama:
 
 1. Convert to RGB if needed
-2. Resize to max dimension (default: 1344px, configurable)
+2. Resize to max dimension (default: 1344 px, configurable)
 3. Export as JPEG with configurable quality (default: 85)
-4. Base64 encode for Ollama API
+4. Base64-encode for Ollama API
+
+---
 
 ## JSON Response Parsing
 
-The wrapper attempts to parse VLM output as JSON using multiple strategies:
-1. Direct JSON parse
-2. Extract from ` ```json ... ``` ` code blocks
-3. Extract from ` ``` ... ``` ` code blocks
-4. Find first `{...}` object in text
-5. Fallback: `{"raw_response": "...", "parse_error": true}`
+The wrapper attempts to parse VLM output as JSON using a fallback chain:
 
-If `parse_error` is in the output, the `raw_response` field contains the original text.
+| Priority | Strategy |
+|----------|----------|
+| 1 | Direct `json.loads()` |
+| 2 | Extract from `` ```json … ``` `` fenced code blocks |
+| 3 | Extract from untagged `` ``` … ``` `` fenced code blocks |
+| 4 | Find first `{ … }` object in text |
+| 5 | Fallback — return `{"raw_response": "…", "parse_error": true}` |
+
+> [!NOTE]
+> When `parse_error` is present in the output, the `raw_response` field
+> contains the original unparsed text from the model.
 
 ## Configuration (Environment Variables)
 

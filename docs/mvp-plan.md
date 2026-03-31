@@ -1,16 +1,38 @@
 # Photo Intelligence — MVP Implementation Plan
 
+Step-by-step plan for bringing the photo-processing pipeline from zero to a
+fully operational MVP, covering infrastructure, CPU/GPU workers, digests,
+and production hardening.
+
 ## Phase Overview
 
 | Phase | Focus | Duration | Dependencies |
 |-------|-------|----------|-------------|
-| **Phase 0** | Infra setup | 1-2 days | Docker, Postgres |
-| **Phase 1** | Ingest + CPU tasks | 3-5 days | Phase 0 |
-| **Phase 2** | VLM pipeline | 3-5 days | Phase 1 + GPU node |
-| **Phase 3** | Digest + observability | 2-3 days | Phase 2 |
-| **Phase 4** | Hardening + backfill | 2-3 days | Phase 3 |
+| **Phase 0** | Infra setup | 1–2 days | Docker, Postgres |
+| **Phase 1** | Ingest + CPU tasks | 3–5 days | Phase 0 |
+| **Phase 2** | VLM pipeline | 3–5 days | Phase 1 + GPU node |
+| **Phase 3** | Digest + observability | 2–3 days | Phase 2 |
+| **Phase 4** | Hardening + backfill | 2–3 days | Phase 3 |
 
-**Total estimated: 2-3 weeks**
+**Total estimated: 2–3 weeks**
+
+```mermaid
+gantt
+    title MVP Timeline
+    dateFormat  YYYY-MM-DD
+    axisFormat  %b %d
+
+    section Infrastructure
+    Phase 0 – Infra setup        :p0, 2024-04-01, 2d
+
+    section Processing
+    Phase 1 – Ingest + CPU tasks :p1, after p0, 5d
+    Phase 2 – VLM pipeline       :p2, after p1, 5d
+
+    section Polish
+    Phase 3 – Digest + observability :p3, after p2, 3d
+    Phase 4 – Hardening + backfill   :p4, after p3, 3d
+```
 
 ---
 
@@ -45,7 +67,7 @@
 ### Tasks
 1. **Batch scanner**
    - Point to a test directory with ~100 images
-   - Run: `photo-intel scan --dirs /path/to/test-images`
+   - Run: `photo-intel ingest --dirs /path/to/test-images`
    - Verify media_items in DB
 
 2. **Task planning**
@@ -213,7 +235,7 @@ psql -h localhost -U photo_intel -d photo_intel -f migrations/001_initial_schema
 docker compose -f docker-compose-gpu.yml up -d
 
 # 4. Test ingest
-photo-intel scan --dirs /path/to/photos
+photo-intel ingest --dirs /path/to/photos
 
 # 5. Start workers
 photo-intel worker --type cpu &

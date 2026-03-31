@@ -1,37 +1,28 @@
 # Photo Intelligence & Digest System
 
-Self-hosted, extensible photo processing pipeline. Ingests images from
-filesystem, extracts structured information via OCR and Vision LLMs, and
-produces daily digests.
+> Self-hosted, extensible photo-processing pipeline — ingest images from the
+> filesystem, extract structured information via OCR and Vision LLMs, and
+> produce daily digests.
 
 ## Architecture
 
-```
- ┌─────────────┐     ┌──────────────┐     ┌──────────────────────┐
- │  Filesystem  │────▶│ Ingest Layer │────▶│  Task Planning Layer │
- │  (photos/)   │     │  (scanner)   │     │  (plan per media)    │
- └─────────────┘     └──────────────┘     └──────────┬───────────┘
-                                                      │
-                     ┌────────────────────────────────▼─────────────────┐
-                     │          Postgres Queue (SKIP LOCKED)            │
-                     │  pending → leased → completed / failed / DLQ    │
-                     └────┬───────────┬───────────┬────────────────────┘
-                          │           │           │
-                    ┌─────▼──┐  ┌─────▼──┐  ┌────▼─────┐
-                    │CPU Work│  │VLM Work│  │Digest Gen│
-                    │exif    │  │caption │  │daily     │
-                    │thumb   │  │action  │  │resurface │
-                    │ocr     │  │memory  │  │          │
-                    └────────┘  └───┬────┘  └──────────┘
-                                    │ HTTP
-                           ┌────────▼────────┐
-                           │  VLM Wrapper     │
-                           │  (GPU node)      │
-                           │  ┌────────────┐  │
-                           │  │  Ollama     │  │
-                           │  │  4070 Ti    │  │
-                           │  └────────────┘  │
-                           └──────────────────┘
+```mermaid
+flowchart TD
+    FS["📁 Filesystem\n(photos/)"] --> IL["🔍 Ingest Layer\n(scanner)"]
+    IL --> TP["📋 Task Planning Layer\n(plan per media)"]
+    TP --> PQ["🗄️ Postgres Queue\n(SKIP LOCKED)\npending → leased → completed / failed / DLQ"]
+
+    PQ --> CPU["⚙️ CPU Worker\nexif · thumbnail · ocr"]
+    PQ --> VLM["🧠 VLM Worker\ncaption · action · memory"]
+    PQ --> DIG["📰 Digest Worker\ndaily · resurface"]
+
+    VLM -- "HTTP" --> WRAP["🖥️ VLM Wrapper\n(GPU node)"]
+    WRAP --> OLL["🟢 Ollama\n(4070 Ti)"]
+
+    style FS fill:#2d6a4f,color:#fff
+    style PQ fill:#1b4965,color:#fff
+    style WRAP fill:#6a040f,color:#fff
+    style OLL fill:#9d0208,color:#fff
 ```
 
 ## Quick Start
@@ -162,8 +153,10 @@ photo-intel/
 
 ## Design Principles
 
-- **Idempotent**: Each task identified by `(media_id, type, version, input_hash)`
-- **Decoupled**: Tasks never call each other; communicate via queue + DB
-- **Resumable**: Crash recovery via lease expiry; no work lost
-- **Extensible**: New tasks = new handler + DB row
-- **GPU-tolerant**: VLM worker gracefully reschedules when GPU unavailable
+| Principle | Detail |
+|-----------|--------|
+| **Idempotent** | Each task identified by `(media_id, type, version, input_hash)` |
+| **Decoupled** | Tasks never call each other; communicate via queue + DB |
+| **Resumable** | Crash recovery via lease expiry; no work lost |
+| **Extensible** | New tasks = new handler + DB row |
+| **GPU-tolerant** | VLM worker gracefully reschedules when GPU unavailable |
