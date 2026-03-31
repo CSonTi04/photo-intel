@@ -5,7 +5,6 @@ import json
 import re
 import uuid
 from pathlib import Path
-from typing import Optional
 
 import structlog
 from PIL import Image
@@ -14,7 +13,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.tables import MediaItem, MediaOCR
-from src.tasks import TaskRetryableError, TaskPermanentError
+from src.tasks import TaskRetryableError
 from src.tasks.registry import register_task
 
 logger = structlog.get_logger()

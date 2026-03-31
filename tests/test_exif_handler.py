@@ -1,15 +1,13 @@
 """Tests for ExtractExifHandler."""
 
 import uuid
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.tasks.handlers.exif_handler import ExtractExifHandler
 from src.tasks import TaskRetryableError
+from src.tasks.handlers.exif_handler import ExtractExifHandler
 from tests.conftest import make_media_item
-
 
 handler = ExtractExifHandler()
 

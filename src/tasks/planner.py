@@ -8,10 +8,7 @@ The planner:
 5. Handles task versioning
 """
 
-import hashlib
-import json
 import uuid
-from typing import Optional
 
 import structlog
 from sqlalchemy import select
@@ -50,7 +47,7 @@ class TaskPlanner:
 
         # Get enabled task definitions
         result = await session.execute(
-            select(TaskDefinition).where(TaskDefinition.enabled == True)
+            select(TaskDefinition).where(TaskDefinition.enabled)
         )
         definitions = result.scalars().all()
 
@@ -77,7 +74,6 @@ class TaskPlanner:
 
             # Determine initial state based on prerequisites
             has_prerequisites = td.prerequisites and len(td.prerequisites) > 0
-            initial_state = TaskState.discovered if has_prerequisites else TaskState.pending
 
             # Create task instance via queue (handles idempotency)
             task_id = await self.queue.enqueue(

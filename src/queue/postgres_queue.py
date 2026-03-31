@@ -10,14 +10,13 @@ This is the heart of the orchestration layer. It provides:
 
 import uuid
 from datetime import datetime, timedelta
-from typing import Optional
 
 import structlog
-from sqlalchemy import text, select, update, and_, or_
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import and_, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.tables import TaskInstance, TaskOutput, DeadLetterTask, TaskState, ProcessingMetric
+from src.models.tables import DeadLetterTask, ProcessingMetric, TaskInstance, TaskOutput, TaskState
 
 logger = structlog.get_logger()
 
@@ -36,9 +35,9 @@ class PostgresQueue:
         task_version: int,
         input_hash: str,
         priority: int = 100,
-        available_at: Optional[datetime] = None,
+        available_at: datetime | None = None,
         max_attempts: int = 3,
-    ) -> Optional[TaskInstance]:
+    ) -> TaskInstance | None:
         """Enqueue a task. Uses INSERT ... ON CONFLICT DO NOTHING for idempotency."""
         stmt = pg_insert(TaskInstance).values(
             id=uuid.uuid4(),
@@ -126,9 +125,9 @@ class PostgresQueue:
         session: AsyncSession,
         task_id: uuid.UUID,
         output_json: dict,
-        summary_text: Optional[str] = None,
-        duration_ms: Optional[int] = None,
-        worker_id: Optional[str] = None,
+        summary_text: str | None = None,
+        duration_ms: int | None = None,
+        worker_id: str | None = None,
     ) -> None:
         """Mark task as completed and store output."""
         await session.execute(

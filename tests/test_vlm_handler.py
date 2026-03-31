@@ -1,17 +1,14 @@
 """Tests for BaseVLMHandler with mocked HTTP calls."""
 
-import json
 import uuid
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
 
-from src.tasks import TaskRetryableError, TaskPermanentError
+from src.tasks import TaskPermanentError, TaskRetryableError
 from src.tasks.handlers.vlm_handler import BaseVLMHandler, VLMCaptionHandler
 from tests.conftest import make_media_item
-
 
 # ── check_vlm_ready ───────────────────────────────────────────
 

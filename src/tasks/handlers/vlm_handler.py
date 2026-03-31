@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.settings import settings
 from src.models.tables import MediaItem
-from src.tasks import TaskHandler, TaskRetryableError, TaskPermanentError
+from src.tasks import TaskPermanentError, TaskRetryableError
 from src.tasks.registry import register_task
 
 logger = structlog.get_logger()

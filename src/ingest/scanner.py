@@ -11,9 +11,9 @@ import hashlib
 import mimetypes
 import os
 import uuid
+from collections.abc import AsyncGenerator
 from datetime import datetime
 from pathlib import Path
-from typing import AsyncGenerator, Optional
 
 import structlog
 from PIL import Image
@@ -109,7 +109,7 @@ async def scan_directory(
 async def register_media_item(
     session: AsyncSession,
     file_path: Path,
-) -> Optional[uuid.UUID]:
+) -> uuid.UUID | None:
     """Register a single image file. Returns media_item_id or None if duplicate."""
     content_hash = compute_content_hash(file_path)
 

@@ -1,11 +1,12 @@
 """CLI entry point for Photo Intelligence system."""
 
 import asyncio
+
 import click
 import structlog
 
-from src.utils.logging import setup_logging
 from src.config.settings import settings
+from src.utils.logging import setup_logging
 
 logger = structlog.get_logger()
 
@@ -24,8 +25,8 @@ def main(log_level: str, json_logs: bool):
 def scan(dirs: tuple, batch_size: int):
     """Run batch filesystem scan."""
     async def _scan():
-        from src.models.database import async_session
         from src.ingest.scanner import run_batch_scan
+        from src.models.database import async_session
 
         directories = list(dirs) if dirs else settings.ingest.watch_dirs
         click.echo(f"Scanning directories: {directories}")
@@ -43,13 +44,14 @@ def scan(dirs: tuple, batch_size: int):
 def ingest(dirs: tuple, batch_size: int):
     """Scan + plan tasks for new images."""
     async def _ingest():
-        from src.models.database import async_session
+        from sqlalchemy import select
+
+        import src.tasks.handlers  # noqa - register handlers
         from src.ingest.scanner import run_batch_scan
+        from src.models.database import async_session
+        from src.models.tables import MediaItem
         from src.queue.postgres_queue import PostgresQueue
         from src.tasks.planner import TaskPlanner
-        from src.models.tables import MediaItem
-        from sqlalchemy import select
-        import src.tasks.handlers  # noqa - register handlers
 
         directories = list(dirs) if dirs else settings.ingest.watch_dirs
         click.echo(f"Ingesting from: {directories}")
@@ -84,8 +86,8 @@ def ingest(dirs: tuple, batch_size: int):
 def worker(worker_type: str, worker_id: str):
     """Start a worker process."""
     async def _worker():
-        from src.workers.worker_loop import Worker, run_maintenance_worker
         import src.tasks.handlers  # noqa - register handlers
+        from src.workers.worker_loop import Worker, run_maintenance_worker
 
         if worker_type == "maintenance":
             await run_maintenance_worker()
@@ -116,8 +118,9 @@ def digest(target_date: str):
     """Generate daily digest."""
     async def _digest():
         from datetime import date, datetime
-        from src.models.database import async_session
+
         from src.digest.generator import DigestGenerator
+        from src.models.database import async_session
 
         gen = DigestGenerator()
         td = datetime.strptime(target_date, "%Y-%m-%d").date() if target_date else date.today()
@@ -134,12 +137,13 @@ def digest(target_date: str):
 def stats():
     """Show system statistics."""
     async def _stats():
-        from src.models.database import async_session
-        from src.queue.postgres_queue import PostgresQueue
-        from sqlalchemy import select, func
-        from src.models.tables import MediaItem, TaskInstance
         from rich.console import Console
         from rich.table import Table
+        from sqlalchemy import func, select
+
+        from src.models.database import async_session
+        from src.models.tables import MediaItem
+        from src.queue.postgres_queue import PostgresQueue
 
         console = Console()
 

@@ -1,12 +1,24 @@
 """SQLAlchemy ORM models matching the database schema."""
 
+# ── Enums ──────────────────────────────────────────────────────
+import enum
 import uuid
-from datetime import datetime, date
-from typing import Optional
+from datetime import datetime
 
 from sqlalchemy import (
-    Boolean, Column, Date, DateTime, Enum, Float, ForeignKey,
-    Integer, BigInteger, String, Text, UniqueConstraint, Index
+    BigInteger,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -14,16 +26,12 @@ from sqlalchemy.orm import relationship
 from src.models.database import Base
 
 
-# ── Enums ──────────────────────────────────────────────────────
-
-import enum
-
-class MediaKind(str, enum.Enum):
+class MediaKind(enum.StrEnum):
     photo = "photo"
     screenshot = "screenshot"
     unknown = "unknown"
 
-class TaskState(str, enum.Enum):
+class TaskState(enum.StrEnum):
     discovered = "discovered"
     pending = "pending"
     leased = "leased"
@@ -31,7 +39,7 @@ class TaskState(str, enum.Enum):
     failed = "failed"
     dead_letter = "dead_letter"
 
-class DigestType(str, enum.Enum):
+class DigestType(enum.StrEnum):
     daily = "daily"
     resurface = "resurface"
 
@@ -65,7 +73,7 @@ class MediaExif(Base):
     __tablename__ = "media_exif"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    media_item_id = Column(UUID(as_uuid=True), ForeignKey("media_item.id", ondelete="CASCADE"), unique=True, nullable=False)
+    media_item_id = Column(UUID(as_uuid=True), ForeignKey("media_item.id", ondelete="CASCADE"), unique=True, nullable=False)  # noqa: E501
     exif_json = Column(JSONB, default={})
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
@@ -139,14 +147,14 @@ class TaskInstance(Base):
 
     media_item = relationship("MediaItem", back_populates="task_instances")
     output = relationship("TaskOutput", back_populates="task_instance", uselist=False, cascade="all, delete-orphan")
-    dead_letter = relationship("DeadLetterTask", back_populates="task_instance", uselist=False, cascade="all, delete-orphan")
+    dead_letter = relationship("DeadLetterTask", back_populates="task_instance", uselist=False, cascade="all, delete-orphan")  # noqa: E501
 
 
 class TaskOutput(Base):
     __tablename__ = "task_output"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    task_instance_id = Column(UUID(as_uuid=True), ForeignKey("task_instance.id", ondelete="CASCADE"), unique=True, nullable=False)
+    task_instance_id = Column(UUID(as_uuid=True), ForeignKey("task_instance.id", ondelete="CASCADE"), unique=True, nullable=False)  # noqa: E501
     output_json = Column(JSONB, default={})
     summary_text = Column(Text)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
@@ -158,7 +166,7 @@ class DeadLetterTask(Base):
     __tablename__ = "dead_letter_task"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    task_instance_id = Column(UUID(as_uuid=True), ForeignKey("task_instance.id", ondelete="CASCADE"), unique=True, nullable=False)
+    task_instance_id = Column(UUID(as_uuid=True), ForeignKey("task_instance.id", ondelete="CASCADE"), unique=True, nullable=False)  # noqa: E501
     error_type = Column(String(128))
     error_message = Column(Text)
     payload_json = Column(JSONB, default={})

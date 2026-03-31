@@ -7,10 +7,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from PIL import Image
 
-from src.tasks.handlers.thumbnail_handler import GenerateThumbnailHandler
 from src.tasks import TaskRetryableError
+from src.tasks.handlers.thumbnail_handler import GenerateThumbnailHandler
 from tests.conftest import make_media_item
-
 
 handler = GenerateThumbnailHandler()
 

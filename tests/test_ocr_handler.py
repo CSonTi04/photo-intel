@@ -3,13 +3,12 @@
 import uuid
 from unittest.mock import MagicMock, patch
 
-import pytest
 import pytesseract
+import pytest
 
 from src.tasks import TaskRetryableError
-from src.tasks.handlers.ocr_handler import run_tesseract, OCRFullHandler
+from src.tasks.handlers.ocr_handler import OCRFullHandler, run_tesseract
 from tests.conftest import make_media_item
-
 
 # ── run_tesseract (mocked pytesseract) ─────────────────────────
 

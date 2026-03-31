@@ -5,7 +5,6 @@ from sqlalchemy.orm import DeclarativeBase
 
 from src.config.settings import settings
 
-
 engine = create_async_engine(
     settings.db.dsn,
     echo=settings.debug,

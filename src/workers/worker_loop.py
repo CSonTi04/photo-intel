@@ -15,17 +15,15 @@ Worker types:
 """
 
 import asyncio
-import time
 import signal
-from typing import Optional
+import time
 
 import structlog
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.settings import settings
 from src.models.database import async_session
 from src.queue.postgres_queue import PostgresQueue
-from src.tasks import TaskRetryableError, TaskPermanentError
+from src.tasks import TaskPermanentError, TaskRetryableError
 from src.tasks.registry import registry
 
 logger = structlog.get_logger()
@@ -45,9 +43,9 @@ class Worker:
     def __init__(
         self,
         worker_type: str,
-        worker_id: Optional[str] = None,
-        concurrency: Optional[int] = None,
-        batch_size: Optional[int] = None,
+        worker_id: str | None = None,
+        concurrency: int | None = None,
+        batch_size: int | None = None,
     ):
         self.worker_type = worker_type
         self.worker_id = worker_id or f"{worker_type}-{settings.worker.worker_id}"
@@ -104,6 +102,7 @@ class Worker:
         try:
             # Get task config from task_definition
             from sqlalchemy import select
+
             from src.models.tables import TaskDefinition
 
             async with async_session() as session:

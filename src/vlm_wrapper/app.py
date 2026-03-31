@@ -11,19 +11,16 @@ It wraps Ollama and provides:
 
 import io
 import json
-import os
 import subprocess
 import time
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Optional
+from datetime import datetime
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from pydantic import BaseModel
-from pydantic_settings import BaseSettings
-from PIL import Image
 import httpx
 import structlog
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from PIL import Image
+from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 
 logger = structlog.get_logger()
 
@@ -79,7 +76,7 @@ PROMPT_REGISTRY: dict[str, dict] = {
     },
     "vlm_actionability": {
         "version": 1,
-        "system": "You are a personal assistant analyzing screenshots for actionable items. Always respond in valid JSON.",
+        "system": "You are a personal assistant analyzing screenshots for actionable items. Always respond in valid JSON.",  # noqa: E501
         "prompt": (
             "Analyze this screenshot carefully. Determine if it contains any actionable information "
             "the user should act on. Look for:\n"
@@ -107,7 +104,7 @@ PROMPT_REGISTRY: dict[str, dict] = {
     },
     "vlm_memory_summary": {
         "version": 1,
-        "system": "You are a personal memory assistant. Extract what's worth remembering from images. Always respond in valid JSON.",
+        "system": "You are a personal memory assistant. Extract what's worth remembering from images. Always respond in valid JSON.",  # noqa: E501
         "prompt": (
             "Analyze this image and determine what is worth remembering for the user's "
             "personal knowledge base. Consider:\n"
@@ -143,7 +140,7 @@ PROMPT_REGISTRY: dict[str, dict] = {
 
 class WrapperState:
     def __init__(self):
-        self.last_task_time: Optional[datetime] = None
+        self.last_task_time: datetime | None = None
         self.tasks_processed: int = 0
         self.errors: int = 0
 
@@ -245,9 +242,9 @@ def parse_vlm_json(raw_text: str) -> dict:
 
 class ReadinessResponse(BaseModel):
     ready: bool
-    reason: Optional[str] = None
-    free_vram_mb: Optional[int] = None
-    cooldown_remaining_seconds: Optional[float] = None
+    reason: str | None = None
+    free_vram_mb: int | None = None
+    cooldown_remaining_seconds: float | None = None
 
 
 @app.get("/ready-for-vlm", response_model=ReadinessResponse)
@@ -296,7 +293,7 @@ class TaskResponse(BaseModel):
     prompt_version: int
     output: dict
     processing_time_ms: int
-    raw_response: Optional[str] = None
+    raw_response: str | None = None
 
 
 @app.post("/run-task/{task_type}", response_model=TaskResponse)

@@ -1,13 +1,11 @@
 """Integration tests for Worker.process_task with mocked handler and queue."""
 
 import uuid
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.tasks import TaskRetryableError, TaskPermanentError
-
+from src.tasks import TaskPermanentError, TaskRetryableError
 
 # ── Helpers ────────────────────────────────────────────────────
 

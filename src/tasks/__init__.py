@@ -1,6 +1,6 @@
 """Task registry — pluggable task handlers."""
 
-from typing import Protocol, Optional
+from typing import Protocol
 from uuid import UUID
 
 

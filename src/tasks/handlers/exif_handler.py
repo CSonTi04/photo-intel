@@ -10,7 +10,7 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.tables import MediaItem, MediaExif
+from src.models.tables import MediaExif, MediaItem
 from src.tasks import TaskRetryableError
 from src.tasks.registry import register_task
 

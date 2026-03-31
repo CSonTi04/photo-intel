@@ -5,8 +5,8 @@ New task types are registered by:
 2. Decorating it with @register_task or calling registry.register()
 """
 
+
 import structlog
-from typing import Optional
 
 from src.tasks import TaskHandler
 
@@ -29,7 +29,7 @@ class TaskRegistry:
         self._handlers[handler.task_type] = handler
         logger.info("task_registry.registered", task_type=handler.task_type)
 
-    def get(self, task_type: str) -> Optional[TaskHandler]:
+    def get(self, task_type: str) -> TaskHandler | None:
         """Get handler for task type."""
         return self._handlers.get(task_type)
 

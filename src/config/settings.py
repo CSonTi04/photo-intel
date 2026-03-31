@@ -1,8 +1,9 @@
 """Application settings — static config from env/YAML, dynamic from DB."""
 
 from pathlib import Path
-from pydantic_settings import BaseSettings
+
 from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class DatabaseSettings(BaseSettings):

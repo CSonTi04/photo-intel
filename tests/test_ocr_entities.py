@@ -1,10 +1,8 @@
 """Tests for OCR entity extraction patterns."""
 
 import re
-import pytest
 
 from src.tasks.handlers.ocr_handler import OCREntitiesHandler
-
 
 handler = OCREntitiesHandler()
 

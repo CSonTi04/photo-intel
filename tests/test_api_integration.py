@@ -1,12 +1,9 @@
 """Integration tests for the FastAPI application using mocked DB sessions."""
 
 import uuid
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
-
 
 # ── Helpers ────────────────────────────────────────────────────
 
@@ -23,14 +20,14 @@ def _setup_app():
 
 def _make_test_client(app, session_mock):
     """Create a TestClient with get_session overridden."""
-    from src.models.database import get_session
     import src.api.app
+    from src.models.database import get_session
 
     async def override_get_session():
         yield session_mock
 
     app.dependency_overrides[get_session] = override_get_session
-    
+
     # Patch the module-level async_session used by endpoints
     mock_maker = MagicMock()
     mock_maker.return_value.__aenter__ = AsyncMock(return_value=session_mock)

@@ -1,16 +1,13 @@
 """Tests for the ingest scanner module."""
 
-import tempfile
 from pathlib import Path
 
-import pytest
 from PIL import Image
 
 from src.ingest.scanner import (
-    compute_content_hash,
     classify_media_kind,
+    compute_content_hash,
     extract_basic_metadata,
-    SCREENSHOT_INDICATORS,
 )
 from src.models.tables import MediaKind
 

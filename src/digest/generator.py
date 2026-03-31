@@ -8,13 +8,14 @@ import uuid
 from datetime import date, datetime, timedelta
 
 import structlog
-from sqlalchemy import select, func, text, and_
+from sqlalchemy import and_, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.tables import (
-    MediaItem, TaskInstance, TaskOutput, TaskState,
-    DigestRun, DigestItem, DigestType,
+    DigestItem,
+    DigestRun,
+    DigestType,
 )
 
 logger = structlog.get_logger()

@@ -1,23 +1,25 @@
 """FastAPI application — admin API and future UI backend."""
 
-import asyncio
 from contextlib import asynccontextmanager
 from uuid import UUID
 
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import select, func, text
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func, select, text
 
 from src.config.settings import settings
-from src.models.database import async_session, get_session
+from src.ingest.scanner import run_batch_scan
+from src.models.database import async_session
 from src.models.tables import (
-    MediaItem, TaskInstance, TaskOutput, TaskDefinition,
-    TaskState, DeadLetterTask, DigestRun, ProcessingMetric,
+    DeadLetterTask,
+    MediaItem,
+    TaskDefinition,
+    TaskInstance,
+    TaskOutput,
+    TaskState,
 )
 from src.queue.postgres_queue import PostgresQueue
 from src.tasks.planner import TaskPlanner
-from src.ingest.scanner import run_batch_scan
 
 
 @asynccontextmanager
@@ -299,7 +301,7 @@ async def list_dead_letter_tasks(limit: int = Query(default=50)):
 async def retry_dead_letter(task_instance_id: UUID):
     """Retry a dead letter task by resetting it to pending."""
     async with async_session() as session:
-        from sqlalchemy import update, delete
+        from sqlalchemy import delete, update
 
         # Reset task instance
         await session.execute(
